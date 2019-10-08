@@ -1,3 +1,21 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Smart Home</string>
+    <string name="button">Update</string>
+    <string name="buttonSettings">Settings</string>
+    <string name="option3">Secure Alarm</string>
+    <string name="option1">Fire Alarm</string>
+    <string name="option4">Electricity Alarm</string>
+    <string name="option2">Water Alarm</string>
+    <string name="header2page">Header</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="save">Save</string>
+    <string name="server_ip">Server IP</string>
+    <string name="back">Back</string>
+    <string name="smart_home">Smart Home</string>
+    <string name="by_retechgroup">by RetechGroup</string>
+    <string name="home">home</string>
+    <string name="title_activity_test">test</string>
 </resources>
