@@ -45,7 +45,6 @@ class Main : AppCompatActivity() {
         GetAsyncTask().execute(url)
 
         //fire
-
         val switch4:Switch = findViewById(R.id.switch4)
         switch4.setOnCheckedChangeListener { buttonView, isChecked ->
             onSwithChange("fire_alarm", switch4.isChecked)
@@ -99,6 +98,8 @@ class Main : AppCompatActivity() {
      */
     fun updateMe  (view: View) {
 
+        progressBar.visibility = View.GONE
+
         val UpdateButton = Toast.makeText(this, "Reload...", Toast.LENGTH_SHORT )
         UpdateButton.show()
 
@@ -134,6 +135,8 @@ class Main : AppCompatActivity() {
             switch2.isChecked = false
             textView9.text = "Server offline!"
         }
+
+        progressBar.visibility = View.GONE
     }
 
     /**
@@ -148,101 +151,62 @@ class Main : AppCompatActivity() {
 
     fun onSwithChange(name: String, value: Boolean) {
 
-        val UpdateButton = Toast.makeText(this, "Updating...", Toast.LENGTH_SHORT )
-        UpdateButton.show()
+        progressBar.visibility = View.VISIBLE
+        textView9.text = "Connecting..."
 
         val url = URL(getUrlfromStorage())
-        textView9.text = "Connecting..."
+
         //POST
-        sendForm (url.toString(), name, value)
-        //PostAsyncTask().execute (url.toString(), name, value.toString())
+        PostAsyncTask().execute (url.toString(), name, value.toString())
 
-        //reload to GET new data
+        //GET
         GetAsyncTask().execute(url)
-
-
     }
 
+    //--------------------------------------------------------------------
     //POST
-    /*
     inner class PostAsyncTask : AsyncTask<String, String, String>() {
 
         private var result: String = ""
 
         override fun onPreExecute() {
             super.onPreExecute()
-            progressBar.visibility = View.VISIBLE
         }
 
-        override fun doInBackground(vararg urls: String): String {
+        override fun doInBackground(vararg params: String): String {
 
             var conn: HttpURLConnection? = null
 
             try {
-                val urlRow = urls[0]
-                val value = urls[2].toInt()
-                val key = urls[1]
-                val urlParameters = "$key=$value"
-                val url = URL(urlRow)
-                conn = url.openConnection() as HttpURLConnection
-                conn.doOutput = true
-                val writer = OutputStreamWriter(conn.getOutputStream())
-                writer.write(urlParameters)
-                writer.flush()
-                val reader = BufferedReader(InputStreamReader(conn.getInputStream()))
-                reader.lineSequence().forEach {
-                    println(it)
-                }
-                reader.close()
-
-                /*
-                val urlRow = URL(urls[0])
-                val value = urls[2].toInt()
-                val urlParameters = "$urls[1]=$value"
-                //Debug.text = urlParameters
-                val url = URL(urlRow.toString())
-                conn = url.openConnection() as HttpURLConnection
-                conn.readTimeout = 4000
-                conn.connectTimeout = 4000
-                conn.requestMethod = "POST"
-                conn.doOutput = true
-                val writer = OutputStreamWriter(conn.getOutputStream())
-                writer.write(urlParameters)
-                writer.flush()
-                val reader = BufferedReader(InputStreamReader(conn.getInputStream()))
-                reader.lineSequence().forEach {
-                    println(it)
-                }
-                reader.close()
-                */
-
+                //POST
+                sendForm (params[0], params[1], params[2].toBoolean())
 
             } catch (ex: Exception) {
-                    Log.d("", "Error in doInBackground " + ex.message)
+                Log.d("", "Error in doInBackground " + ex.message)
             } finally {
                 conn?.disconnect()
             }
-            return " "
+            return result
         }
 
-        override fun onProgressUpdate(vararg values: String?) {
-
-            Debug.text = "done"
-        }
+        override fun onProgressUpdate(vararg values: String?) { }
 
         override fun onPostExecute(result: String?) {
             // Done
             super.onPostExecute(result)
             progressBar.visibility = View.GONE
         }
-
-
     }
-*/
+//--------------------------------------------------------------------
 
+    /**
+     * specific Bool var
+     */
     fun Boolean.toInt() = if (this) 1 else 0
 
-
+    /**
+     * POST method
+     */
     fun sendForm(urlRow: String, key: String, value: Boolean ) {
         var result = ""
 
@@ -263,9 +227,6 @@ class Main : AppCompatActivity() {
                 println(it)
             }
             reader.close()
-
-
-
         } catch (e: Exception) {
             e.printStackTrace()
             //set buttons to OFF
@@ -287,7 +248,6 @@ class Main : AppCompatActivity() {
 
         override fun onPreExecute() {
             super.onPreExecute()
-            progressBar.visibility = View.VISIBLE
         }
 
 
@@ -319,7 +279,6 @@ class Main : AppCompatActivity() {
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
-            progressBar.visibility = View.GONE
             //send result to parser
             parseResult(result.toString())
         }
