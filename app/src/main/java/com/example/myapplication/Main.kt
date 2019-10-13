@@ -2,24 +2,23 @@ package com.example.myapplication
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.AsyncTask
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
-import android.view.View
 import android.util.Log
+import android.view.View
+import android.webkit.WebChromeClient.FileChooserParams.parseResult
+import android.widget.Switch
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.system.exitProcess
-import android.R.attr.data
-import android.webkit.WebChromeClient.FileChooserParams.parseResult
-import android.widget.Button
-import android.widget.Switch
 import java.io.*
-
 
 
 class Main : AppCompatActivity() {
@@ -33,47 +32,42 @@ class Main : AppCompatActivity() {
     private val APP_PREFERENCES = "settings"
     private val APP_PREFERENCES_IP = "ip"
 
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
-        if (android.os.Build.VERSION.SDK_INT > 9) {
+        if (Build.VERSION.SDK_INT > 9) {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
         }
 
         val url = URL(getUrlfromStorage())
-        MyAsyncTask().execute(url)
+        GetAsyncTask().execute(url)
 
         //fire
+
         val switch4:Switch = findViewById(R.id.switch4)
-        switch4.setOnClickListener {
+        switch4.setOnCheckedChangeListener { buttonView, isChecked ->
             onSwithChange("fire_alarm", switch4.isChecked)
         }
 
         //
         val switch3:Switch = findViewById(R.id.switch3)
-        switch3.setOnClickListener {
-            onSwithChange("electro_alarm", switch4.isChecked)
+        switch3.setOnCheckedChangeListener { buttonView, isChecked ->
+            onSwithChange("electro_alarm", switch3.isChecked)
         }
 
         //
         val switch2:Switch = findViewById(R.id.switch2)
-        switch2.setOnClickListener {
-            onSwithChange("secure_alarm", switch4.isChecked)
+        switch2.setOnCheckedChangeListener { buttonView, isChecked ->
+            onSwithChange("secure_alarm", switch2.isChecked)
         }
 
-        //
+
         val switch1:Switch = findViewById(R.id.switch1)
-        switch1.setOnClickListener {
-            //Debug.text = switch1.isChecked.toString()
-            onSwithChange("water_alarm", switch4.isChecked)
+        switch1.setOnCheckedChangeListener { buttonView, isChecked ->
+            onSwithChange("water_alarm", switch1.isChecked)
         }
-
     }
 
     private fun getUrlfromStorage (): String? {
@@ -81,22 +75,23 @@ class Main : AppCompatActivity() {
         pref = getSharedPreferences(APP_PREFERENCES, MODE_PRIVATE)
 
         if (pref.contains(APP_PREFERENCES_IP)) {
-            // Получаем число из настроек
+            // Получаем IP из настроек
             var ip = pref.getString(APP_PREFERENCES_IP, null)
             // Выводим на экран данные из настроек
             textView6.text = ip
-            textView9.text = "Connected"
+            textView9.text = "Connecting..."
 
             return "http://$ip:8080/"
 
         } else {
             val UpdateButton = Toast.makeText(this, "IP not set. Please go to SETTINGS!", Toast.LENGTH_LONG)
             UpdateButton.show()
-            textView6.text = "no IP"
-            textView9.text = "no connection"
+            textView6.text = "No IP"
+            textView9.text = "No connection"
             return "http://127.0.0.1/"
         }
     }
+
 
 
     /**
@@ -104,11 +99,11 @@ class Main : AppCompatActivity() {
      */
     fun updateMe  (view: View) {
 
-        val UpdateButton = Toast.makeText(this, "Updating...", Toast.LENGTH_SHORT)
+        val UpdateButton = Toast.makeText(this, "Reload...", Toast.LENGTH_SHORT )
         UpdateButton.show()
 
         val url = URL(getUrlfromStorage())
-        MyAsyncTask().execute(url)
+        GetAsyncTask().execute(url)
     }
 
     /**
@@ -117,12 +112,27 @@ class Main : AppCompatActivity() {
     fun parseResult (data:String) {
 
         if(!data.isNullOrEmpty()){
-            val jsonObject = JSONObject(data)
-            switch1.isChecked = jsonObject["water_alarm"].toString().toInt() > 0
-            switch4.isChecked = jsonObject["fire_alarm"].toString().toInt() > 0
-            switch3.isChecked = jsonObject["electro_alarm"].toString().toInt() > 0
-            switch2.isChecked = jsonObject["secure_alarm"].toString().toInt() > 0
-            //Debug.text = jsonObject["secure_alarm"].toString()
+            //check server response
+            try {
+                //Debug.text = data
+                val jsonObject = JSONObject(data)
+                switch1.isChecked = jsonObject["water_alarm"].toString().toInt() > 0
+                switch4.isChecked = jsonObject["fire_alarm"].toString().toInt() > 0
+                switch3.isChecked = jsonObject["electro_alarm"].toString().toInt() > 0
+                switch2.isChecked = jsonObject["secure_alarm"].toString().toInt() > 0
+
+                textView9.text = "Connected"
+            } catch (ex: Exception) {
+                textView9.text = "Bad server response!"
+            }
+
+
+        } else {
+            switch1.isChecked = false
+            switch4.isChecked = false
+            switch3.isChecked = false
+            switch2.isChecked = false
+            textView9.text = "Server offline!"
         }
     }
 
@@ -136,72 +146,88 @@ class Main : AppCompatActivity() {
     }
 
 
-    fun onSwithChange(name: String, value: Boolean?) {
+    fun onSwithChange(name: String, value: Boolean) {
+
+        val UpdateButton = Toast.makeText(this, "Updating...", Toast.LENGTH_SHORT )
+        UpdateButton.show()
+
         val url = URL(getUrlfromStorage())
-        MyAsyncTask().execute(url)
+        textView9.text = "Connecting..."
+        //POST
+        sendForm (url.toString(), name, value)
+        //PostAsyncTask().execute (url.toString(), name, value.toString())
+
+        //reload to GET new data
+        GetAsyncTask().execute(url)
+
+
     }
 
     //POST
-    inner class GetAsyncTaskPost : AsyncTask<String, String, String>() {
+    /*
+    inner class PostAsyncTask : AsyncTask<String, String, String>() {
+
+        private var result: String = ""
 
         override fun onPreExecute() {
             super.onPreExecute()
             progressBar.visibility = View.VISIBLE
         }
 
-        override fun doInBackground(vararg urls: String?): String {
-            var urlConnection: HttpURLConnection? = null
+        override fun doInBackground(vararg urls: String): String {
+
+            var conn: HttpURLConnection? = null
 
             try {
-                val url = URL(urls[0])
+                val urlRow = urls[0]
+                val value = urls[2].toInt()
+                val key = urls[1]
+                val urlParameters = "$key=$value"
+                val url = URL(urlRow)
+                conn = url.openConnection() as HttpURLConnection
+                conn.doOutput = true
+                val writer = OutputStreamWriter(conn.getOutputStream())
+                writer.write(urlParameters)
+                writer.flush()
+                val reader = BufferedReader(InputStreamReader(conn.getInputStream()))
+                reader.lineSequence().forEach {
+                    println(it)
+                }
+                reader.close()
 
-                urlConnection = url.openConnection() as HttpURLConnection
+                /*
+                val urlRow = URL(urls[0])
+                val value = urls[2].toInt()
+                val urlParameters = "$urls[1]=$value"
+                //Debug.text = urlParameters
+                val url = URL(urlRow.toString())
+                conn = url.openConnection() as HttpURLConnection
+                conn.readTimeout = 4000
+                conn.connectTimeout = 4000
+                conn.requestMethod = "POST"
+                conn.doOutput = true
+                val writer = OutputStreamWriter(conn.getOutputStream())
+                writer.write(urlParameters)
+                writer.flush()
+                val reader = BufferedReader(InputStreamReader(conn.getInputStream()))
+                reader.lineSequence().forEach {
+                    println(it)
+                }
+                reader.close()
+                */
 
-
-                var inString = streamToString(urlConnection.inputStream)
-
-                publishProgress(inString)
 
             } catch (ex: Exception) {
-
+                    Log.d("", "Error in doInBackground " + ex.message)
             } finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect()
-                }
+                conn?.disconnect()
             }
-
             return " "
         }
 
         override fun onProgressUpdate(vararg values: String?) {
 
-            /*
-            try {
-                var json = JSONObject(values[0])
-
-                val query = json.getJSONObject("query")
-                val results = query.getJSONObject("results")
-                val channel = results.getJSONObject("channel")
-
-                val location = channel.getJSONObject("location")
-                val city = location.get("city")
-                val country = location.get("country")
-
-                val humidity = channel.getJSONObject("atmosphere").get("humidity")
-                val condition = channel.getJSONObject("item").getJSONObject("condition")
-                val temp = condition.get("temp")
-                val text = condition.get("text")
-
-                tvWeatherInfo.text =
-                    "Location: " + city + " - " + country + "\n" +
-                            "Humidity: " + humidity + "\n" +
-                            "Temperature: " + temp + "\n" +
-                            "Status: " + text
-
-            } catch (ex: Exception) {
-
-            }
-            */
+            Debug.text = "done"
         }
 
         override fun onPostExecute(result: String?) {
@@ -212,12 +238,50 @@ class Main : AppCompatActivity() {
 
 
     }
+*/
+
+    fun Boolean.toInt() = if (this) 1 else 0
 
 
+    fun sendForm(urlRow: String, key: String, value: Boolean ) {
+        var result = ""
+
+        try {
+            val value = value.toInt()
+            val urlParameters = "$key=$value"
+            val url = URL(urlRow)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.readTimeout = 1000
+            conn.connectTimeout = 1000
+            conn.doOutput = true
+
+            val writer = OutputStreamWriter(conn.getOutputStream())
+            writer.write(urlParameters)
+            writer.flush()
+            val reader = BufferedReader(InputStreamReader(conn.getInputStream()))
+            reader.lineSequence().forEach {
+                println(it)
+            }
+            reader.close()
+
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            //set buttons to OFF
+            parseResult(result)
+        }
+    }
+
+
+
+
+
+
+    //---------------------------------------------------------------------------------
     //GET
-
     // AsyncTask inner class
-    inner class MyAsyncTask : AsyncTask<URL, Int, String>() {
+    inner class GetAsyncTask : AsyncTask<URL, Int, String>() {
 
         private var result: String = ""
 
@@ -228,10 +292,12 @@ class Main : AppCompatActivity() {
 
 
         override fun doInBackground(vararg params: URL?): String {
+
+            var connect: HttpURLConnection? = null
             try {
-                val connect = params[0]?.openConnection() as HttpURLConnection
-                connect.readTimeout = 8000
-                connect.connectTimeout = 8000
+                connect = params[0]?.openConnection() as HttpURLConnection
+                connect.readTimeout = 4000
+                connect.connectTimeout = 4000
                 connect.requestMethod = "GET"
                 connect.connect()
 
@@ -239,14 +305,16 @@ class Main : AppCompatActivity() {
                 if (responseCode == 200) {
                     result = streamToString(connect.inputStream)
                 }
-            } catch (ex: Exception) {
+
+            }
+            catch (ex: Exception) {
                 Log.d("", "Error in doInBackground " + ex.message)
+            } finally {
+                if (connect != null) {
+                    connect.disconnect()
+                }
             }
             return result
-        }
-
-        override fun onProgressUpdate(vararg values: Int?) {
-            super.onProgressUpdate(*values)
         }
 
         override fun onPostExecute(result: String?) {
