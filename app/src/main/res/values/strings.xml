@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Smart Home</string>
     <string name="button">Reload</string>
+    <string name="button3">Exit</string>
     <string name="buttonSettings">Settings</string>
     <string name="option3">Secure Alarm</string>
     <string name="option1">Fire Alarm</string>
@@ -18,4 +19,5 @@
     <string name="by_retechgroup">by RetechGroup</string>
     <string name="home">home</string>
     <string name="title_activity_test">test</string>
+    <string name="status">Status:</string>
 </resources>

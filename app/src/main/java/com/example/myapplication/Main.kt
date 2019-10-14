@@ -151,7 +151,6 @@ class Main : AppCompatActivity() {
 
     fun onSwithChange(name: String, value: Boolean) {
 
-        progressBar.visibility = View.VISIBLE
         textView9.text = "Connecting..."
 
         val url = URL(getUrlfromStorage())
@@ -170,6 +169,7 @@ class Main : AppCompatActivity() {
         private var result: String = ""
 
         override fun onPreExecute() {
+            progressBar.visibility = View.VISIBLE
             super.onPreExecute()
         }
 
@@ -248,6 +248,7 @@ class Main : AppCompatActivity() {
 
         override fun onPreExecute() {
             super.onPreExecute()
+            progressBar.visibility = View.VISIBLE
         }
 
 
@@ -307,7 +308,7 @@ class Main : AppCompatActivity() {
     /**
      * EXIT
      */
-    override fun finish () {
+    fun exitApp (view: View) {
         moveTaskToBack(true)
         exitProcess(-1)
     }
